@@ -286,6 +286,7 @@ with open('results.log', 'w') as results_file:
             inbounds.append(inbound)
             base_port1 += 1
             port = base_port1 
+            print(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为', client_password , file=results_file)
 
         port = base_port2
         for _ in range(1):  
@@ -342,7 +343,7 @@ with open('results.log', 'w') as results_file:
             port = base_port2  
 
             # 将当前 IP 的 user 和 passw 输出到文件
-            print(f'IP {ip} 的用户名：{user}, 密码：{passw}', file=results_file)
+            print(f'IP {ip}:{port} sk配置的用户名：{user}, 密码：{passw}', file=results_file)
 
 
     conn = sqlite3.connect('temp.db')
@@ -375,7 +376,7 @@ with open('results.log', 'w') as results_file:
     conn.commit()
     conn.close()
     print(f'已成功将 {len(inbounds)} 条规则写入数据库。', file=results_file)
-    print('ss客户邮箱为123456，密码为', client_password , file=results_file)
+
     print(f'如有需要您也可自行前往https://{ip}:2053管理，用户名和密码均为admin', file=results_file)
 EOF
 cat > writetemple.py <<EOF
