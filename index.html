@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no"/>
+    <meta name="renderer" content="webkit"/>
+    <title>公司产品介绍</title>
+    <link rel="stylesheet" href="https://unpkg.com/mdui@2/mdui.css">
+    <script src="https://unpkg.com/mdui@2/mdui.global.js"></script>
+    <script src="js/onload.js"></script>
+    <script>window.onload = initPages;</script>
+    <!-- Filled -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Outlined -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet">
+    <!-- Rounded -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <!-- Sharp -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Sharp" rel="stylesheet">
+    <!-- Two Tone -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Two+Tone" rel="stylesheet">
+</head>
+<script>
+</script>
+
+<body>
+    <!-- 导航栏 -->
+    <mdui-navigation-bar value="home" class="mdui-color-theme" scroll-behavior="hide">
+      <mdui-navigation-bar-item value="home" icon="home--outlined" active-icon="home">公司介绍</mdui-navigation-bar-item>
+      <mdui-navigation-bar-item value="form" icon="featured_play_list--outlined" active-icon="featured_play_list">信息提交</mdui-navigation-bar-item>
+      <mdui-navigation-bar-item value="order" icon="info--outlined" active-icon="info">订单查询</mdui-navigation-bar-item>
+      <mdui-navigation-bar-item value="license" icon="verified--outlined" active-icon="verified">执照资质</mdui-navigation-bar-item>
+    </mdui-navigation-bar>
+  
+    <!-- 公司和产品介绍 -->
+    <div id="home" class="home-container tab-content" style="display: none;">
+        <div class="mdui-container scroll-target-home" style="position: relative;overflow: hidden;">
+          <!-- <h1 class="home-title">寒艺阁</h1> -->
+            <div class="product-grid">
+            <div class="product-item">
+              <img src="src/img/home.png" alt="背景图" class="product-image"/>
+              <div class="product-info">
+                <mdui-button class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-theme" >了解更多</mdui-button>
+              </div>
+            </div>
+            <div class="product-item">
+              <img src="src/img/chemis.png" alt="纸片化学产品渲染图" class="product-image"/>
+              <div class="product-info">
+                <mdui-button class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-theme" >了解规则</mdui-button>
+                <mdui-button class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-theme-accent" >前往购买</mdui-button>
+              </div>
+            </div>
+            <div class="product-item">
+              <img src="src/img/studio.png" alt="背景图" class="product-image"/>
+              <div class="product-info">
+                <mdui-button class="mdui-btn mdui-btn-raised mdui-ripple mdui-color-theme" >了解更多</mdui-button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <style>
+        body{
+          margin-top: 50px;
+          margin-left: 15px;
+          margin-right: 15px;
+        }
+        .home-container {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          padding: 1px 0;
+        }
+        
+      
+        .home-title {
+          margin-bottom: 48px;
+          align-items: center;
+          font-size: 2.5rem;
+          font-weight: bold;
+        }
+      
+        .product-grid {
+          display: flex;
+          flex-wrap: wrap;
+          justify-content: center;
+          gap: 24px;
+          width: 100%;
+        }
+      
+        .product-item {
+          flex-basis: calc(60%);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          background-color: #fff;
+          padding: 16px;
+          border-radius: 8px;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          height: 100%;
+          width: 100%;
+        }
+      
+        .product-image {
+          width: 100%;
+          height: auto;
+          margin-bottom: 16px;
+          border-radius: 8px;
+          overflow: hidden;
+
+        }
+      
+        .product-info {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+      
+        .mdui-btn {
+          margin: 8px;
+        }
+        .mdui-footer{
+          margin-left: -15px;
+          position: fixed;
+          bottom: auto;
+          width: 100%;
+          text-align: center;
+          font-size: 12px;
+          color: #888;
+          padding: 10px 0;
+        }
+        .textfieldsha{
+          border-radius: 1rem;
+          padding: 20px;
+          border: 1px solid #888;
+        }
+      </style>
+  
+    <div id="form" class="tab-content mdui-prose mdui-col-xs-12 textfield" style="display: none;">
+      <h1>信息提交</h1>
+      <mdui-dialog close-on-overlay-click class="formDialog">
+        <mdui-dialog-title>test</mdui-dialog-title>
+        <mdui-dialog-content>test</mdui-dialog-content>
+        </mdui-dialog>
+      <form id="infoForm">
+        <div class="textfieldsha mdui-color-theme-accent">
+        <mdui-text-field style="margin-top: 25px;" variant="outlined" label="SwiftNo" name="swiftno"  required></mdui-text-field>
+        <mdui-text-field style="margin-top: 25px;" variant="outlined" label="Name" name="name"  required></mdui-text-field>
+        <mdui-text-field style="margin-top: 25px;"  variant="outlined" label="Addr" name="addr"  required></mdui-text-field>
+        <mdui-text-field style="margin-top: 25px;" variant="outlined" label="Phone" counter  name="phone" maxlength="11" required></mdui-text-field>
+        </div>
+      </form>
+      <div style="margin-top: 50px;">
+      <mdui-button type="submit" class="mdui-color-theme-accent form-submit">提交</mdui-button>
+      <mdui-button class="formDialogbtn">查看购买方式</mdui-button>
+      
+      </div>
+    </div>
+  
+    <!-- 订单查询 -->
+    <div id="order" class="tab-content mdui-prose textfield" style="display: none;">
+      <h1>订单查询</h1>
+      <form id="orderForm">
+        <mdui-text-field style="margin-top: 16px;" label="Phone" counter  name="phone" maxlength="11" required></mdui-text-field>
+        <mdui-button style="margin-top: 16px;" type="submit" class="mdui-color-theme-accent">查询</mdui-button>
+      </form>
+      <div id="orderResult"></div>
+    </div>
+  
+    <!-- 执照和资质公示 -->
+    <div id="license" class="tab-content mdui-prose" style="display: none;">
+      <h1>执照和资质公示</h1>
+      <p>这里是公司的执照和资质信息。</p>
+    </div>
+  
+    <script>
+        //const dialog = document.querySelector("form-way");
+        
+        //const openButton = document.querySelector("form-way-button");
+        //openButton.addEventListener("click", () => dialog.open = true);
+
+        //document.querySelectorAll('mdui-navigation-bar-item').forEach(navItem => {
+        //navItem.removeAttribute('mdui-tab-active');
+        //    if (navItem.getAttribute('value') === pageToShow){
+        //        navItem.setAttribute('mdui-tab-active', '');
+        //    }
+        //    });
+        //}
+
+        //window.onload = initPages;
+      // 导航栏切换逻辑
+        document.querySelectorAll('mdui-navigation-bar-item').forEach(item => {
+            item.addEventListener('click', function(){
+
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.style.display = 'none';
+                });
+
+                document.querySelectorAll('mdui-navigation-bar-item').forEach(navItem => {
+                    navItem.removeAttribute('.mdui-tab-active');
+
+                });
+
+                this.setAttribute('mdui-tab-active', "");
+
+                var activeTab = this.getAttribute('value');
+//                document.getElementById(activeTab).style.display = '' ;
+                var content = document.getElementById(activeTab);
+//              console.log("test:", activeTab, content);
+                if (content){
+                    content.style.display = "block";
+                } else {
+                    console.error("error", activeTab);
+                }
+
+            });
+        });
+  
+      // 信息提交表单提交逻辑
+      document.getElementById('infoForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var formData = {
+          swiftno: document.querySelector('[name="swiftno"]').value,
+          name: document.querySelector('[name="name"]').value,
+          addr: document.querySelector('[name="addr"]').value,
+          phone: document.querySelector('[name="phone"]').value
+        };
+        // 这里使用 fetch 或者 XMLHttpRequest 进行 POST 请求
+        // 省略 POST 请求代码
+      });
+  
+      // 订单查询表单提交逻辑
+      document.getElementById('orderForm').addEventListener('submit', function(event) {
+        event.preventDefault();
+        var phone = document.querySelector('[name="phone"]').value;
+        // 这里使用 fetch 或者 XMLHttpRequest 进行 POST 请求
+        // 省略 POST 请求代码
+        document.getElementById('orderResult').textContent = '订单号: ' + phone; // 假设返回的订单号就是phone
+      });
+      
+        const dialog = document.querySelector(".formDialog");
+        console.log("get dialog:",dialog);
+        const openButton = document.querySelector(".formDialogbtn");
+        openButton.addEventListener("click", () => dialog.open = true);
+    </script>
+  </body>
+  <footer class="mdui-footer mdui-color-theme mdui-text-center">
+    <p>&copy; 2024 寒艺阁版权所有</p>
+  </footer>
+  </html>
