@@ -284,9 +284,10 @@ with open('results.log', 'w') as results_file:
                 })
             }
             inbounds.append(inbound)
+
+            print(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为', client_password , file=results_file)
             base_port1 += 1
             port = base_port1 
-            print(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为', client_password , file=results_file)
 
         port = base_port2
         for _ in range(1):  
@@ -339,12 +340,9 @@ with open('results.log', 'w') as results_file:
                 })
             }
             inbounds.append(inbound)
+            print(f'{ip}:{port} sk配置的用户名：{user}, 密码：{passw}', file=results_file)
             base_port2 += 1
             port = base_port2  
-
-            # 将当前 IP 的 user 和 passw 输出到文件
-            print(f'IP {ip}:{port} sk配置的用户名：{user}, 密码：{passw}', file=results_file)
-
 
     conn = sqlite3.connect('temp.db')
     cursor = conn.cursor()
