@@ -32,16 +32,16 @@ fi
 #安装python3
 case "$ID" in
     ubuntu|debian)
-        sudo apt-get update
-        sudo apt-get install -y python3
+        apt-get update
+        apt-get install -y python3 xxd
         ;;
     centos)
-        sudo yum update
-        sudo yum install -y python3
+        yum update
+        yum install -y python3 xxd
         ;;
     fedora)
-        sudo dnf update
-        sudo dnf install -y python3
+        dnf update
+        dnf install -y python3 xxd
         ;;
     *)
         echo "脚本未适配您使用的OS，您依旧可以选择继续运行，但您需要保证您已经正确安装python3"
@@ -57,36 +57,36 @@ esac
 clear
 
 if [ -e "/etc/systemd/system/x-ui.service" ]; then
-    read -p "您已经部署过x-ui，请不要重复部署，除非您知道您在做什么。按Crtl+C退出，按任意键继续" reinstall_flag
-    echo "已经安装了x-ui，尝试读取配置信息"
-    x-ui settings
+    read -p "您已经部署过x-ui，为保证能够正常运作，将进行卸载"
+    yes | x-ui uninstall
 else
-    read -p "如遇到英文提示且画面停止不动，请按n键，然后回车即可。确认知晓后按任意键开始x-ui部署" install_flag
-    #bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+    echo "未部署x-ui，将部署x-ui面板并自动配置"
+    sleep 1
+   #bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+fi
+    
+MAX_RETRIES=3
+retry_count=0
 
-    MAX_RETRIES=3
-    retry_count=0
+while [ $retry_count -lt $MAX_RETRIES ]
+do
 
-    while [ $retry_count -lt $MAX_RETRIES ]
-    do
+    if echo "n" | bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh); then
+        break
+    else
+        let retry_count++
+    fi
+done
 
-        if bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh); then
-            break
-        else
-            let retry_count++
-        fi
-    done
-
-    if [ $retry_count -eq $MAX_RETRIES ]; then
-        echo "脚本执行失败，建议联系脚本提供者"
-        read -p "是否重试？(y/n): " answer
-        if [[ "$answer" =~ ^[Yy]$ ]]; then
-            echo "正在重试..."
-            retry_count=0
-            bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
-        else
-            echo "Aborted"
-        fi
+if [ $retry_count -eq $MAX_RETRIES ]; then
+    echo "脚本执行失败，建议联系脚本提供者"
+    read -p "是否重试？(y/n): " answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        echo "正在重试..."
+        retry_count=0
+        echo "n" | bash <(curl -Ls https://raw.githubusercontent.com/mhsanaei/3x-ui/master/install.sh)
+    else
+        echo "Aborted"
     fi
 fi
 
