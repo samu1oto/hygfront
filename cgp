@@ -107,4 +107,4 @@ if [ $? -ne 0 ]; then
 fi
 
 rm -f changeport.py
-
+x-ui start
