@@ -1,0 +1,98 @@
+#!/bin/bash
+
+service_file="/etc/systemd/system/x-ui.service"
+is_installed=false
+
+if [ -f "$service_file" ]; then
+    is_installed=true
+fi
+
+show_menu() {
+    if [ "$is_installed" = true ]; then
+        echo "1. 安装"
+        echo "2. 修改端口号"
+        echo "3. 卸载"
+        echo "4. 查看安装信息"
+        echo "5. 退出"
+    else
+        echo "1. 安装"
+        echo "2. 退出"
+    fi
+    echo "x-ui.service安装状态: $( [ "$is_installed" = true ] && echo "已安装" || echo "未安装" )"
+    echo "请选择一个选项:"
+}
+
+install_service() {
+    echo "执行安装..."
+    bash <(curl -Ls https://raw.githubusercontent.com/samu1oto/hygfront/master/xuiconf) || {
+        echo "安装过程中发生错误，返回菜单..."
+        return 1
+    }
+    echo "安装完成。"
+}
+
+change_port() {
+    if [ "$is_installed" = true ]; then
+        echo "修改端口号..."
+        bash <(curl -Ls https://raw.githubusercontent.com/samu1oto/hygfront/master/cgp) || {
+            echo "修改端口号过程中发生错误，返回菜单..."
+            return 1
+        }
+        echo "端口号修改成功。"
+    else
+        echo "x-ui.service未安装，无法修改端口号。"
+    fi
+}
+
+uninstall_service() {
+    if [ "$is_installed" = true ]; then
+        echo "执行卸载..."
+        yes | x-ui uninstall || {
+            echo "卸载过程中发生错误，返回菜单..."
+            return 1
+        }
+        echo "卸载完成。"
+    else
+        echo "x-ui.service未安装，无需卸载。"
+    fi
+}
+
+view_info() {
+    if [ "$is_installed" = true ]; then
+        echo "查看安装信息..."
+        cat results.log || {
+            echo "查看安装信息过程中发生错误，返回菜单..."
+            return 1
+        }
+        echo "安装信息：..."
+    else
+        echo "x-ui.service未安装，无法查看安装信息。"
+    fi
+}
+
+while true; do
+    show_menu
+    read -p "请输入选项: " option
+    case $option in
+        1)
+            install_service
+            ;;
+        2)
+            change_port
+            ;;
+        3)
+            uninstall_service
+            ;;
+        4)
+            view_info
+            ;;
+        5)
+            echo "退出..."
+            exit 0
+            ;;
+        *)
+            echo "无效选项，请重新输入。"
+            ;;
+    esac
+    echo "" 
+done
