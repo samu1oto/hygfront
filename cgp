@@ -1,7 +1,10 @@
 #!/bin/bash
+
 rm -f changeport.py
 cat > changeport.py <<EOF
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import json
 import sqlite3
 import os
@@ -54,6 +57,7 @@ for inbound in inbounds:
             print(f"{ip} SS端口 {port} 已经更改为{new_port}")
             ss_port_changed = True
             new_ss_port = new_port
+            old_ss_port = port
 
     elif protocol == "socks":
         new_port = input(f"请输入 {ip}:{port} 的新SK5端口：（无需修改请直接回车）  ").strip()
@@ -64,27 +68,28 @@ for inbound in inbounds:
             print(f"{ip} SK5端口 {port} 已经更改为{new_port}")
             sk5_port_changed = True
             new_sk5_port = new_port
+            old_sk5_port = port
 
-if ss_port_changed:
-    for rule in rules:
-        for index, tag in enumerate(rule.get("inboundTag", [])):
-            if tag.startswith(f"inbound-ip:{ip}"):
-                rule["inboundTag"][index] = f"inbound-ip:{ip}:{new_ss_port}"
+#if ss_port_changed:
+#    for rule in rules:
+#        for index, tag in enumerate(rule.get("inboundTag", [])):
+#            if tag.startswith(f"inbound-ip:{ip}"):
+#                rule["inboundTag"][index] = f"inbound-ip:{ip}:{new_ss_port}"
 
-if sk5_port_changed:
-    for rule in rules:
-        for index, tag in enumerate(rule.get("inboundTag", [])):
-            if tag.startswith(f"inbound-{ip}"):
-                rule["inboundTag"][index] = f"inbound-{ip}:{new_sk5_port}"
+#if sk5_port_changed:
+#    for rule in rules:
+#        for index, tag in enumerate(rule.get("inboundTag", [])):
+#            if tag.startswith(f"inbound-{ip}"):
+#                rule["inboundTag"][index] = f"inbound-{ip}:{new_sk5_port}"
 
-with open('change.json', 'w') as f:
-    json.dump(config, f, indent=4)
+#with open('change.json', 'w') as f:
+#    json.dump(config, f, indent=4)
 
-cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (open('change.json', 'r').read(),))
-conn.commit()
+#cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (open('change.json', 'r').read(),))
+#conn.commit()
 
 # Delete change.json
-os.remove('change.json')
+#os.remove('change.json')
 
 print("新的修改已经应用到数据库")
 conn.close()
@@ -102,5 +107,4 @@ if [ $? -ne 0 ]; then
 fi
 
 rm -f changeport.py
-x-ui start
 
