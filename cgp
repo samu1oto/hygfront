@@ -1,10 +1,7 @@
 #!/bin/bash
-
 rm -f changeport.py
 cat > changeport.py <<EOF
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
 import json
 import sqlite3
 import os
