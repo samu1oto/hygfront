@@ -105,23 +105,25 @@ try:
     json_data = []  
     for ip in ips:  
         json_data.append({  
-            "tag": ip,  
+            "tag": ip,
             "protocol": "freedom",  
             "settings": {  
                 "domainStrategy": "UseIP",  
                 "redirect": "",  
                 "noises": []  
             },  
-            "sendThrough": ip  
-        })  
+            "sendThrough": ip
+        }) 
   
 
     with open('outbound.json', 'w') as f:  
         json.dump(json_data, f, indent=4)  
   
 except subprocess.CalledProcessError as e:  
+
     print(f"Error executing hostname -I: {e}")  
 except Exception as e:  
+ 
     print(f"An error occurred: {e}")
 EOF
 
@@ -153,33 +155,24 @@ try:
   
 
     ss_base_port = 20000
-    for ip in ips:
-        port = ss_base_port
-        ss_base_port += 1
-        json_obj = {
-            "type": "field",
-            "network": "TCP,UDP",
-            "inboundTag": ["inbound-ip:{}:{}".format(ip, port)],
-            "outboundTag": ip
-        }
-        json_list.append(json_obj)
-
     sk5_base_port = 50000
     for ip in ips:
-        port = sk5_base_port
-        sk5_base_port += 1
+
         json_obj = {
             "type": "field",
             "network": "TCP,UDP",
-            "inboundTag": ["inbound-ip:{}:{}".format(ip, port)],
+            "inboundTag": ["inbound-ip:{}:{}".format(ip,ss_base_port),"inbound-{}:{}".format(ip,sk5_base_port)],
             "outboundTag": ip
         }
+        ss_base_port +=1
+        sk5_base_port += 1
         json_list.append(json_obj)
 
     
     with open('route.json', 'w') as f:  
         json.dump(json_list, f, indent=2, ensure_ascii=False)  
   
+#错误跟踪
 except subprocess.CalledProcessError as e:  
     print(f"Error getting hostname: {e}")  
 except Exception as e:  
