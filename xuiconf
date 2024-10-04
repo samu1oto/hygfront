@@ -213,6 +213,7 @@ with open('results.log', 'w') as results_file:
         else:
             print("输入格式错误，请以G为结尾")
             exit()
+        total_values = {ip: total_value for ip in ips}
     else:
         total_values = {}
         for ip in ips:
@@ -227,10 +228,7 @@ with open('results.log', 'w') as results_file:
                     time.sleep(1)
 
     for ip in ips:
-        if all_same_traffic == 'n':
-            total_value = total_g
-        else:
-            total_value = total_values[ip]
+        total_value = total_values[ip]
 
         client_password = ''.join(random.choice(string.digits) for _ in range(6))
 
