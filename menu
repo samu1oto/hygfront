@@ -14,11 +14,12 @@ show_menu() {
         echo "3. 卸载"
         echo "4. 查看安装信息"
         echo "5. 修改密码"
-        echo "6. 退出"
+        echo "6. 恢复配置"
+        echo "7. 退出"
     else
         clear
         echo "1. 安装"
-        echo "6. 退出"
+        echo "7. 退出"
     fi
     echo "x-ui.service安装状态: $( [ "$is_installed" = true ] && echo "已安装" || echo "未安装" )"
     echo "请选择一个选项:"
@@ -92,6 +93,21 @@ view_info() {
     fi
 }
 
+restore_conf() {
+    if [ "$is_installed" = true ]; then
+        echo "确认要恢复配置？所有信息将按照results.log还原"
+        echo "按任意键继续..."
+        read -n 1 -s -r
+        x-ui stop
+        cp /etc/x-ui/x-ui.bak /etc/x-ui/x-ui.db
+        x-ui start
+        echo "配置恢复完成"
+        sleep 3
+    else
+        echo "x-ui.service未安装，请先安装"
+    fi
+}
+
 # 主循环
 while true; do
     show_menu
@@ -112,7 +128,10 @@ while true; do
         5)
             change_pwd
             ;;
-        6) 
+        6)
+            restore_conf
+            ;;
+        7) 
             echo "退出..."
             exit 0
             ;;
