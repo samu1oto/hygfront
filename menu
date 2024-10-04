@@ -70,7 +70,7 @@ change_pwd() {
 uninstall_service() {
     if [ "$is_installed" = true ]; then
         echo "执行卸载..."
-        x-ui uninstall || {
+        yes | x-ui uninstall || {
             echo "卸载过程中发生错误，返回菜单..."
             return 1
         }
