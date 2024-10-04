@@ -13,11 +13,12 @@ show_menu() {
         echo "2. 修改端口号"
         echo "3. 卸载"
         echo "4. 查看安装信息"
-        echo "5. 退出"
+        echo "5. 修改密码"
+        echo "6. 退出"
     else
         clear
         echo "1. 安装"
-        echo "2. 退出"
+        echo "6. 退出"
     fi
     echo "x-ui.service安装状态: $( [ "$is_installed" = true ] && echo "已安装" || echo "未安装" )"
     echo "请选择一个选项:"
@@ -46,6 +47,21 @@ change_port() {
         sleep 3
     else
         echo "x-ui.service未安装，无法修改端口号。"
+    fi
+}
+
+# 修改密码
+change_pwd() {
+    if [ "$is_installed" = true ]; then
+        echo "修改密码..."
+        bash <(curl -Ls https://raw.githubusercontent.com/samu1oto/hygfront/master/cgpwd) || {
+            echo "发生错误，返回菜单..."
+            return 1
+        }
+        echo "密码修改成功。"
+        sleep 3
+    else
+        echo "x-ui.service未安装，无法修改密码。"
     fi
 }
 
@@ -94,6 +110,9 @@ while true; do
             view_info
             ;;
         5)
+            change_pwd
+            ;;
+        6) 
             echo "退出..."
             exit 0
             ;;

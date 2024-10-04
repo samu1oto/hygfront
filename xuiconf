@@ -196,9 +196,7 @@ def generate_password():
     return os.urandom(16).hex()
 
 def generate_user_pass():
-    user = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-    passw = ''.join(random.choices(string.ascii_letters + string.digits, k=8))
-    return user, passw
+    return ''.join(random.choices(string.digits, k=10)), ''.join(random.choices(string.digits, k=10))
 
 base_port1 = 20000
 base_port2 = 50000
@@ -206,16 +204,33 @@ base_port2 = 50000
 inbounds = []
 
 with open('results.log', 'w') as results_file:  
+    all_same_traffic = input("是否为每个IP单独设置流量？(y/n): ").strip().lower()
+    if all_same_traffic == 'n':
+        total_g = input("请输入所有IP的可用流量（请以G为单位，1024进制）: ").strip().upper()
+        match = re.match(r'(\d+)(G)$', total_g)
+        if match:
+            total_value = int(match.group(1)) * 1073741824
+        else:
+            print("输入格式错误，请以G为结尾")
+            exit()
+    else:
+        total_values = {}
+        for ip in ips:
+            while True:
+                total_g = input(f"请输入 IP {ip} 的可用流量（请以G为单位，1024进制）: ").strip().upper()
+                match = re.match(r'(\d+)(G)$', total_g)
+                if match:
+                    total_values[ip] = int(match.group(1)) * 1073741824
+                    break  # 如果匹配成功，跳出外部循环
+                else:
+                    print("输入格式错误，请以G为结尾")
+                    time.sleep(1)
+
     for ip in ips:
-        while True:
-            total_g = input(f"请输入 IP {ip} 的可用流量（请以G为单位，1024进制）: ").strip().upper()
-            match = re.match(r'(\d+)(G)$', total_g)
-            if match:
-                total_value = int(match.group(1)) * 1073741824
-                break  # 如果匹配成功，跳出外部循环
-            else:
-                print("输入格式错误，请以G为结尾")
-                time.sleep(1)
+        if all_same_traffic == 'n':
+            total_value = total_g
+        else:
+            total_value = total_values[ip]
 
         client_password = ''.join(random.choice(string.digits) for _ in range(6))
 
@@ -2107,6 +2122,7 @@ if [ $? -ne 0 ]; then
 fi
 
 cp temp.db /etc/x-ui/x-ui.db
+cp temp.db /etc/x-ui/x-ui.bak
 
 if [ $? -ne 0 ]; then
     echo "复制生成的规则库失败"

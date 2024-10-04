@@ -1,0 +1,68 @@
+#!/bin/bash
+rm -f cgpwd.py
+cat > cgpwd.py <<EOF
+import sqlite3
+import json
+
+def update_password(ip, port, new_password):
+    conn = sqlite3.connect('/etc/x-ui/x-ui.db')
+    cursor = conn.cursor()
+
+    sql = '''
+    UPDATE inbounds
+    SET settings = ?
+    WHERE listen = ? AND port = ?;
+    '''
+
+    # 获取当前的设置
+    cursor.execute('SELECT settings FROM inbounds WHERE listen = ? AND port = ?', (ip, port))
+    current_settings = cursor.fetchone()
+    if current_settings:
+        current_settings = json.loads(current_settings[0])
+
+        # 更新密码
+        if 'clients' in current_settings:
+            for client in current_settings['clients']:
+                client['password'] = new_password
+        elif 'accounts' in current_settings:
+            for account in current_settings['accounts']:
+                account['pass'] = new_password
+
+        # 将更新后的设置转换回 JSON 字符串
+        updated_settings = json.dumps(current_settings)
+
+        # 执行更新操作
+        cursor.execute(sql, (updated_settings, ip, port))
+        conn.commit()
+        print(f'密码已更新为: {new_password}')
+    else:
+        print(f'未找到 IP {ip} 端口 {port} 的记录')
+
+    # 关闭数据库连接
+    conn.close()
+
+def main():
+    ip = input("请输入要修改的IP地址: ")
+    port = input("请输入要修改的端口号: ")
+    new_password = input("请输入新的密码: ")
+
+    update_password(ip, int(port), new_password)
+
+if __name__ == "__main__":
+    main()
+
+EOF
+
+x-ui stop
+if [ $? -ne 0 ]; then
+    echo "未能停止x-ui或者权限不足"
+fi
+python3 cgpwd.py
+if [ $? -ne 0 ]; then
+    echo "脚本执行失败"
+    rm -f cgpwd.py
+    exit 1
+fi
+
+rm -f cgpwd.py
+x-ui start

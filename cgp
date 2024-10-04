@@ -97,7 +97,7 @@ EOF
 
 x-ui stop
 if [ $? -ne 0 ]; then
-    echo "未能停止x-ui或x-ui已经停止。如出错再继续排查"
+    echo "未能停止x-ui或者权限不足"
 fi
 python3 changeport.py
 if [ $? -ne 0 ]; then
