@@ -29,11 +29,11 @@ def generate_user_pass():
     return user, passw
 
 # 添加新的ss规则
-def add_ss_rule(ip, total_value, base_port):
+def add_ss_rule(ip, total_value, base_port, occupied_ports):
     client_password = ''.join(random.choice(string.digits) for _ in range(6))
     port = base_port
     # 确保端口号未被使用，包括不同IP但相同端口的情况
-    while (port,) in cursor.execute("SELECT port FROM inbounds").fetchall():
+    while (port,) in occupied_ports:
         port += 1
     settings = {
         "method": "aes-256-gcm",
@@ -78,15 +78,16 @@ def add_ss_rule(ip, total_value, base_port):
         inbound["protocol"], inbound["settings"], inbound["stream_settings"], inbound["tag"],
         inbound["sniffing"], inbound["allocate"]
     ))
+    occupied_ports.add((port,))
     append_to_log(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为 {client_password}')
     return port
 
 # 添加新的sk规则
-def add_sk_rule(ip, total_value, base_port):
+def add_sk_rule(ip, total_value, base_port, occupied_ports):
     user, passw = generate_user_pass()
     port = base_port
     # 确保端口号未被使用，包括不同IP但相同端口的情况
-    while (port,) in cursor.execute("SELECT port FROM inbounds").fetchall():
+    while (port,) in occupied_ports:
         port += 1
     settings = {
         "auth": "password",
@@ -120,6 +121,7 @@ def add_sk_rule(ip, total_value, base_port):
         inbound["protocol"], inbound["settings"], inbound["stream_settings"], inbound["tag"],
         inbound["sniffing"], inbound["allocate"]
     ))
+    occupied_ports.add((port,))
     append_to_log(f'{ip}:{port} sk配置的用户名：{user}, 密码：{passw}')
     return port
 
