@@ -2,7 +2,6 @@
 
 rm -f addrule.py
 cat > addrule.py <<EOF
-
 import sqlite3
 import re
 import json
@@ -10,24 +9,30 @@ import random
 import string
 import os
 
+# 连接数据库
 conn = sqlite3.connect('/etc/x-ui/x-ui.db')
 cursor = conn.cursor()
 
-cursor.execute("SELECT port, protocol FROM inbounds")
-occupied_ports = {(port, protocol) for port, protocol in cursor.fetchall()}
+# 读取所有被占用的端口号，并获取是什么协议
+cursor.execute("SELECT port, protocol, listen FROM inbounds")
+occupied_ports = {(port, protocol) for port, protocol, listen in cursor.fetchall()}
 
+# 将输出追加到results.log文件
 def append_to_log(message):
     with open('results.log', 'a') as log_file:
         log_file.write(message + '\n')
 
+# 生成随机密码
 def generate_password():
     return os.urandom(16).hex()
 
+# 生成随机用户名和密码
 def generate_user_pass():
     user = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
     passw = ''.join(random.choices(string.digits, k=10))
     return user, passw
 
+# 添加新的ss规则
 def add_ss_rule(ip, total_value, base_port):
     client_password = ''.join(random.choice(string.digits) for _ in range(6))
     port = base_port
@@ -69,7 +74,7 @@ def add_ss_rule(ip, total_value, base_port):
     }
     cursor.execute("""
         INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, (
         inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
         inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
@@ -79,6 +84,7 @@ def add_ss_rule(ip, total_value, base_port):
     append_to_log(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为 {client_password}')
     return port
 
+# 添加新的sk规则
 def add_sk_rule(ip, total_value, base_port):
     user, passw = generate_user_pass()
     port = base_port
@@ -109,7 +115,7 @@ def add_sk_rule(ip, total_value, base_port):
     }
     cursor.execute("""
         INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, (
         inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
         inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
@@ -119,7 +125,7 @@ def add_sk_rule(ip, total_value, base_port):
     append_to_log(f'{ip}:{port} sk配置的用户名：{user}, 密码：{passw}')
     return port
 
-
+# 用户选择操作
 options = {
     '1': '批量添加新的规则（ss和sk）',
     '2': '批量添加新的ss规则',
@@ -141,40 +147,59 @@ if choice in options:
         exit()
     total_value = int(match.group(1)) * 1073741824
 
-    ips = [ip for ip, _ in occupied_ports] 
+    if choice == '4':
+        ip = input("请输入要添加规则的IP地址：")
+        if not ip:
+            ips = [ip for ip, _ in occupied_ports]
+            print(f"可用的IP地址有：{', '.join(ips)}")
+            exit()
+        else:
+            if (int(ip.split(':')[0]),) not in occupied_ports:
+                print(f"IP地址 {ip} 未被占用，可以添加规则。")
+            else:
+                print(f"IP地址 {ip} 已被占用，请选择其他IP。")
+                exit()
+    else:
+        ips = [ip for ip, _ in occupied_ports]  # 获取所有IP地址
+
+    added_count = 0
     if choice == '1':
         base_port_ss = 20000
         base_port_sk = 50000
         for ip in ips:
-            add_ss_rule(ip, total_value, base_port_ss)
-            add_sk_rule(ip, total_value, base_port_sk)
-            base_port_ss += 1
-            base_port_sk += 1
+            new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
+            new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
+            base_port_ss = new_port_ss + 1
+            base_port_sk = new_port_sk + 1
+            added_count += 2
     elif choice == '2':
         base_port_ss = 20000
         for ip in ips:
-            add_ss_rule(ip, total_value, base_port_ss)
-            base_port_ss += 1
+            new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
+            base_port_ss = new_port_ss + 1
+            added_count += 1
     elif choice == '3':
         base_port_sk = 50000
         for ip in ips:
-            add_sk_rule(ip, total_value, base_port_sk)
-            base_port_sk += 1
+            new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
+            base_port_sk = new_port_sk + 1
+            added_count += 1
     elif choice == '4':
-        ss_or_sk = input("请输入要添加的规则类型（ss或sk）：")
+        base_port_ss = 20000
+        base_port_sk = 50000
         if ss_or_sk.lower() == 'ss':
-            base_port = 20000
-            add_ss_rule(ips[0], total_value, base_port)
+            new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
+            added_count += 1
         elif ss_or_sk.lower() == 'sk':
-            base_port = 50000
-            add_sk_rule(ips[0], total_value, base_port)
-        else:
-            print("无效的规则类型")
+            new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
+            added_count += 1
+            base_port_ss = new_port_ss + 1
+            base_port_sk = new_port_sk + 1
+
+    conn.commit()
+    print(f'已成功将 {added_count} 条规则写入数据库。')
 else:
     print("无效的选项")
-
-conn.commit()
-print(f'已成功将 {cursor.rowcount} 条规则写入数据库。')
 conn.close()
 EOF
 
