@@ -69,7 +69,7 @@ def add_ss_rule(ip, total_value, base_port):
     }
     cursor.execute("""
         INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, (
         inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
         inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
