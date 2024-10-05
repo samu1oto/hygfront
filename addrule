@@ -28,12 +28,10 @@ def generate_user_pass():
     passw = ''.join(random.choices(string.digits, k=10))
     return user, passw
 
-# 添加新的ss规则
 def add_ss_rule(ip, total_value, base_port):
     client_password = ''.join(random.choice(string.digits) for _ in range(6))
     port = base_port
-    # 确保端口号未被使用
-    while (port, 'ss') in occupied_ports:
+    while any((port, 'ss') in occupied_ports or (port, protocol) in occupied_ports for port, protocol in cursor.execute("SELECT port, protocol FROM inbounds").fetchall()):
         port += 1
     settings = {
         "method": "aes-256-gcm",
@@ -69,27 +67,22 @@ def add_ss_rule(ip, total_value, base_port):
         "sniffing": json.dumps({"enabled": True, "destOverride": ["http", "tls", "quic", "fakedns"]}),
         "allocate": json.dumps({"strategy": "always", "refresh": 5, "concurrency": 3})
     }
-    try:
-        cursor.execute("""
-            INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """, (
-            inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
-            inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
-            inbound["protocol"], inbound["settings"], inbound["stream_settings"], inbound["tag"],
-            inbound["sniffing"], inbound["allocate"]
-        ))
-        append_to_log(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为 {client_password}')
-        return port
-    except sqlite3.IntegrityError:
-        return add_ss_rule(ip, total_value, port + 1)
+    cursor.execute("""
+        INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """, (
+        inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
+        inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
+        inbound["protocol"], inbound["settings"], inbound["stream_settings"], inbound["tag"],
+        inbound["sniffing"], inbound["allocate"]
+    ))
+    append_to_log(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为 {client_password}')
+    return port
 
-# 添加新的sk规则
 def add_sk_rule(ip, total_value, base_port):
     user, passw = generate_user_pass()
     port = base_port
-    # 确保端口号未被使用
-    while (port, 'sk') in occupied_ports:
+    while any((port, 'sk') in occupied_ports or (port, protocol) in occupied_ports for port, protocol in cursor.execute("SELECT port, protocol FROM inbounds").fetchall()):
         port += 1
     settings = {
         "auth": "password",
@@ -114,20 +107,18 @@ def add_sk_rule(ip, total_value, base_port):
         "sniffing": json.dumps({"enabled": True, "destOverride": ["http", "tls", "quic", "fakedns"]}),
         "allocate": json.dumps({"strategy": "always", "refresh": 5, "concurrency": 3})
     }
-    try:
-        cursor.execute("""
-            INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-            """, (
-            inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
-            inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
-            inbound["protocol"], inbound["settings"], inbound["stream_settings"], inbound["tag"],
-            inbound["sniffing"], inbound["allocate"]
-        ))
-        append_to_log(f'{ip}:{port} sk配置的用户名：{user}, 密码：{passw}')
-        return port
-    except sqlite3.IntegrityError:
-        return add_sk_rule(ip, total_value, port + 1)
+    cursor.execute("""
+        INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        """, (
+        inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
+        inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
+        inbound["protocol"], inbound["settings"], inbound["stream_settings"], inbound["tag"],
+        inbound["sniffing"], inbound["allocate"]
+    ))
+    append_to_log(f'{ip}:{port} sk配置的用户名：{user}, 密码：{passw}')
+    return port
+
 
 
 def get_local_ips():
@@ -138,7 +129,8 @@ options = {
     '1': '批量添加新的规则（ss和sk）',
     '2': '批量添加新的ss规则',
     '3': '批量添加新的sk规则',
-    '4': '单个添加规则'
+    '4': '单个添加规则',
+    '0': '退出程序'
 }
 
 def main_menu():
@@ -148,7 +140,26 @@ def main_menu():
             print(f"{key}. {value}")
         choice = input("请输入选项编号：")
 
-        if choice in options:
+        if choice == '0':
+            print("退出程序...")
+            break
+        elif choice in options:
+            # ... 省略的代码 ...
+            pass
+        else:
+            print("无效的选项，请重新输入！")
+
+
+def main_menu():
+    while True:
+        print("请选择一个选项：")
+        for key, value in options.items():
+            print(f"{key}. {value}")
+        choice = input("请输入选项编号：")
+        if choice == '0':
+            print("退出程序...")
+            break
+        elif choice in options:
             total_g = input("请输入新的规则的流量大小（请以G为单位，1024进制）: ").strip().upper()
             match = re.match(r'(\d+)(G)$', total_g)
             if not match:
@@ -169,7 +180,7 @@ def main_menu():
                         print(f"IP地址 {ip} 已被占用，请选择其他IP。")
                         continue
             else:
-                ips = get_local_ips()  # 获取所有IP地址
+                ips = get_local_ips()  
 
             added_count = 0
             if choice == '1':
@@ -215,6 +226,8 @@ if __name__ == "__main__":
     main_menu()
 
 conn.close()
+
+
 EOF
 
 x-ui stop
