@@ -102,7 +102,7 @@ restore_conf() {
         x-ui stop
         cp /etc/x-ui/x-ui.bak /etc/x-ui/x-ui.db
         admin_text="用户名和密码均为admin"
-        result_file_path="example.txt"
+        result_file_path="results.log"
         sed -i '/'"$admin_text"'/,$d' "$result_file_path"
         x-ui start
         echo "配置恢复完成"
