@@ -31,7 +31,7 @@ def generate_user_pass():
 def add_ss_rule(ip, total_value, base_port):
     client_password = ''.join(random.choice(string.digits) for _ in range(6))
     port = base_port
-    while any((port, 'ss') in occupied_ports or (port, protocol) in occupied_ports for port, protocol in cursor.execute("SELECT port, protocol FROM inbounds").fetchall()):
+    while any((port, 'shadowsocks') in occupied_ports or (port, protocol) in occupied_ports for port, protocol in cursor.execute("SELECT port, protocol FROM inbounds").fetchall()):
         port += 1
     settings = {
         "method": "aes-256-gcm",
@@ -82,7 +82,7 @@ def add_ss_rule(ip, total_value, base_port):
 def add_sk_rule(ip, total_value, base_port):
     user, passw = generate_user_pass()
     port = base_port
-    while any((port, 'sk') in occupied_ports or (port, protocol) in occupied_ports for port, protocol in cursor.execute("SELECT port, protocol FROM inbounds").fetchall()):
+    while any((port, 'socks') in occupied_ports or (port, protocol) in occupied_ports for port, protocol in cursor.execute("SELECT port, protocol FROM inbounds").fetchall()):
         port += 1
     settings = {
         "auth": "password",
