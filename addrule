@@ -28,10 +28,12 @@ def generate_user_pass():
     passw = ''.join(random.choices(string.digits, k=10))
     return user, passw
 
+# 添加新的ss规则
 def add_ss_rule(ip, total_value, base_port):
     client_password = ''.join(random.choice(string.digits) for _ in range(6))
     port = base_port
-    while any((port, 'shadowsocks') in occupied_ports or (port, protocol) in occupied_ports for port, protocol in cursor.execute("SELECT port, protocol FROM inbounds").fetchall()):
+    # 确保端口号未被使用，包括不同IP但相同端口的情况
+    while (port, 'ss') in occupied_ports or (port, 'ss') in cursor.execute("SELECT port, protocol FROM inbounds").fetchall():
         port += 1
     settings = {
         "method": "aes-256-gcm",
@@ -79,10 +81,12 @@ def add_ss_rule(ip, total_value, base_port):
     append_to_log(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为 {client_password}')
     return port
 
+# 添加新的sk规则
 def add_sk_rule(ip, total_value, base_port):
     user, passw = generate_user_pass()
     port = base_port
-    while any((port, 'socks') in occupied_ports or (port, protocol) in occupied_ports for port, protocol in cursor.execute("SELECT port, protocol FROM inbounds").fetchall()):
+    # 确保端口号未被使用，包括不同IP但相同端口的情况
+    while (port, 'sk') in occupied_ports or (port, 'sk') in cursor.execute("SELECT port, protocol FROM inbounds").fetchall():
         port += 1
     settings = {
         "auth": "password",
@@ -118,8 +122,6 @@ def add_sk_rule(ip, total_value, base_port):
     ))
     append_to_log(f'{ip}:{port} sk配置的用户名：{user}, 密码：{passw}')
     return port
-
-
 
 def get_local_ips():
     ip_output = subprocess.check_output(['hostname', '-I'], text=True).strip()
@@ -174,48 +176,37 @@ def main_menu():
                     print(f"可用的IP地址有：{', '.join(ips)}")
                     continue
                 else:
-                    if (int(ip.split(':')[0]),) not in occupied_ports:
-                        print(f"IP地址 {ip} 未被占用，可以添加规则。")
-                    else:
-                        print(f"IP地址 {ip} 已被占用，请选择其他IP。")
-                        continue
+                    # 如果是单个添加规则，则不需要检查IP是否被占用
+                    ss_or_sk = input("请输入要添加的规则类型（ss或sk）：").lower()
+                    if ss_or_sk == 'ss':
+                        new_port_ss = add_ss_rule(ip, total_value, 20000)
+                    elif ss_or_sk == 'sk':
+                        new_port_sk = add_sk_rule(ip, total_value, 50000)
+                    added_count = 1
             else:
                 ips = get_local_ips()  
-
-            added_count = 0
-            if choice == '1':
-                base_port_ss = 20000
-                base_port_sk = 50000
-                for ip in ips:
-                    new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
-                    new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
-                    base_port_ss = new_port_ss + 1
-                    base_port_sk = new_port_sk + 1
-                    added_count += 2
-            elif choice == '2':
-                base_port_ss = 20000
-                for ip in ips:
-                    new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
-                    base_port_ss = new_port_ss + 1
-                    added_count += 1
-            elif choice == '3':
-                base_port_sk = 50000
-                for ip in ips:
-                    new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
-                    base_port_sk = new_port_sk + 1
-                    added_count += 1
-            elif choice == '4':
-                base_port_ss = 20000
-                base_port_sk = 50000
-                ss_or_sk = input("请输入要添加的规则类型（ss或sk）：").lower()
-                if ss_or_sk == 'ss':
-                    new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
-                    added_count += 1
-                elif ss_or_sk == 'sk':
-                    new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
-                    added_count += 1
-                base_port_ss = new_port_ss + 1
-                base_port_sk = new_port_sk + 1
+                added_count = 0
+                if choice == '1':
+                    base_port_ss = 20000
+                    base_port_sk = 50000
+                    for ip in ips:
+                        new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
+                        new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
+                        base_port_ss = new_port_ss + 1
+                        base_port_sk = new_port_sk + 1
+                        added_count += 2
+                elif choice == '2':
+                    base_port_ss = 20000
+                    for ip in ips:
+                        new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
+                        base_port_ss = new_port_ss + 1
+                        added_count += 1
+                elif choice == '3':
+                    base_port_sk = 50000
+                    for ip in ips:
+                        new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
+                        base_port_sk = new_port_sk + 1
+                        added_count += 1
 
             conn.commit()
             print(f'已成功将 {added_count} 条规则写入数据库。')
@@ -224,9 +215,7 @@ def main_menu():
 
 if __name__ == "__main__":
     main_menu()
-
-conn.close()
-
+    conn.close()
 
 EOF
 
