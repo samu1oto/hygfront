@@ -74,7 +74,7 @@ def add_ss_rule(ip, total_value, base_port):
     }
     cursor.execute("""
         INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, (
         inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
         inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
@@ -115,7 +115,7 @@ def add_sk_rule(ip, total_value, base_port):
     }
     cursor.execute("""
         INSERT INTO inbounds (user_id, up, down, total, remark, enable, expiry_time, listen, port, protocol, settings, stream_settings, tag, sniffing, allocate)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         """, (
         inbound["user_id"], inbound["up"], inbound["down"], inbound["total"], inbound["remark"],
         inbound["enable"], inbound["expiry_time"], inbound["listen"], inbound["port"],
@@ -200,6 +200,7 @@ if choice in options:
     print(f'已成功将 {added_count} 条规则写入数据库。')
 else:
     print("无效的选项")
+
 conn.close()
 EOF
 
