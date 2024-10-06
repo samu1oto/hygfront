@@ -123,6 +123,11 @@ def add_sk_rule(ip, total_value, base_port):
     append_to_log(f'{ip}:{port} sk配置的用户名：{user}, 密码：{passw}')
     return port
 
+    
+def get_local_ips():
+    ip_output = subprocess.check_output(['hostname', '-I'], text=True).strip()
+    return ip_output.split()
+
 options = {
     '1': '批量添加新的规则（ss和sk）',
     '2': '批量添加新的ss规则',
