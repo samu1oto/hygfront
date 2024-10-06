@@ -164,26 +164,26 @@ def add_new_tags_to_route(inbound_tags_by_ip):
         print("未找到现有的xray模板配置")
         return
     
-    # 遍历每个 IP 地址和对应的新 tags
-    for ip, tags in inbound_tags_by_ip.items():
-        new_tags = [tag for tag in tags if tag not in [item for sublist in [rule.get("inboundTag", []) for rule in template_config["routing"]["rules"]] for item in sublist]]
-        update_route_rules_for_ip(template_config, new_tags, ip)
+    # 获取现有的所有tags
+    existing_tags = {item for sublist in [rule.get("inboundTag", []) for rule in template_config["routing"]["rules"]] for item in sublist}
 
-def update_route_rules_for_ip(template_config, new_tags, ip):
-    # 更新rules，只添加对应 ip 的 tag
-    routing_rules = template_config.get("routing", {}).get("rules", [])
-    for rule in routing_rules:
-        if "ip" in rule and ip in rule["ip"]:
-            rule["inboundTag"] = [tag for tag in rule.get("inboundTag", []) if tag.startswith(f"inbound-{ip}:")]
-            for new_tag in new_tags:
-                if new_tag not in rule["inboundTag"]:
-                    rule["inboundTag"].append(new_tag)
+    # 更新rules，只添加对应的ip的tag
+    for rule in template_config["routing"]["rules"]:
+        rule_tags = set(rule.get("inboundTag", []))
+        new_tags_for_rule = set()
+        for ip, tags in inbound_tags_by_ip.items():
+            if any(tag.startswith(f"inbound-{ip}:") for tag in tags):
+                new_tags_for_rule.update(tags)
+        new_tags_for_rule = new_tags_for_rule - existing_tags
+        if new_tags_for_rule:
+            rule_tags.update(new_tags_for_rule)
+            rule["inboundTag"] = list(rule_tags)
 
     # 将更新后的配置写回数据库
     updated_config = json.dumps(template_config, ensure_ascii=False)
     cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (updated_config,))
     conn.commit()
-    print(f"路由规则已更新，IP: {ip}")
+    print("路由规则已更新")
 
 options = {
     '1': '批量添加新的规则（ss和sk）',
@@ -229,35 +229,33 @@ def main_menu():
             else:
                 ips = get_local_ips()
                 added_count = 0
-                new_tags = []
+                new_tags = {ip: [] for ip in ips}
                 if choice == '1':
                     base_port_ss = 20000
                     base_port_sk = 50000
-                    inbound_tags_by_ip = {}
                     for ip in ips:
                         new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
                         new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
-                        inbound_tags_by_ip[ip] = [f"inbound-ip:{ip}:{new_port_ss}", f"inbound-{ip}:{new_port_sk}"]
+                        new_tags.append(f"inbound-ip:{ip}:{new_port_ss}")
+                        new_tags.append(f"inbound-{ip}:{new_port_sk}")
                         base_port_ss = new_port_ss + 1
                         base_port_sk = new_port_sk + 1
                         added_count += 2
                 elif choice == '2':
                     base_port_ss = 20000
-                    inbound_tags_by_ip = {}
                     for ip in ips:
                         new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
-                        inbound_tags_by_ip[ip] = [f"inbound-ip:{ip}:{new_port_ss}"]
+                        new_tags.append(f"inbound-ip:{ip}:{new_port_ss}")
                         base_port_ss = new_port_ss + 1
                         added_count += 1
                 elif choice == '3':
                     base_port_sk = 50000
-                    inbound_tags_by_ip = {}
                     for ip in ips:
                         new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
-                        inbound_tags_by_ip[ip] = [f"inbound-{ip}:{new_port_sk}"]
+                        new_tags.append(f"inbound-{ip}:{new_port_sk}")
                         base_port_sk = new_port_sk + 1
                         added_count += 1
-                add_new_tags_to_route(inbound_tags_by_ip)
+                add_new_tags_to_route(new_tags)
 
             conn.commit()
             print(f'已成功将 {added_count} 条规则写入数据库。')
@@ -267,6 +265,7 @@ def main_menu():
 if __name__ == "__main__":
     main_menu()
     conn.close()
+
 EOF
 
 x-ui stop
