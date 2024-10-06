@@ -144,17 +144,13 @@ def update_route_rules(template_config, new_tags):
         return
 
     routing_rules = template_config.get("routing", {}).get("rules", [])
-    existing_tags = [item for sublist in [rule.get("inboundTag", []) for rule in routing_rules] for item in sublist]
-
-    # 合并新的和现有的tags
-    for new_tag in new_tags:
-        if new_tag not in existing_tags:
-            existing_tags.append(new_tag)
-
-    # 更新rules
+    
+    # 更新rules，只添加对应的ip的tag
     for rule in routing_rules:
         if "inboundTag" in rule:
-            rule["inboundTag"] = existing_tags
+            for new_tag in new_tags:
+                if new_tag not in rule["inboundTag"]:
+                    rule["inboundTag"].append(new_tag)
 
     # 将更新后的配置写回数据库
     updated_config = json.dumps(template_config, ensure_ascii=False)
@@ -167,7 +163,9 @@ def add_new_tags_to_route(inbound_tags):
     if template_config is None:
         print("未找到现有的xray模板配置")
         return
-    new_tags = [tag for tag in inbound_tags if tag not in [rule.get("inboundTag", []) for rule in template_config["routing"]["rules"]]]
+    
+    # 只添加该ip对应的新tags
+    new_tags = [tag for tag in inbound_tags if tag not in [item for sublist in [rule.get("inboundTag", []) for rule in template_config["routing"]["rules"]] for item in sublist]]
     update_route_rules(template_config, new_tags)
 
 
