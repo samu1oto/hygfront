@@ -24,15 +24,13 @@ def generate_password():
     return os.urandom(16).hex()
 
 def generate_user_pass():
-    user = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+    user = ''.join(random.choices(string.digits, k=10))
     passw = ''.join(random.choices(string.digits, k=10))
     return user, passw
 
-# 添加新的ss规则
 def add_ss_rule(ip, total_value, base_port):
     client_password = ''.join(random.choice(string.digits) for _ in range(6))
     port = base_port
-    # 确保端口号未被使用，包括不同IP但相同端口的情况
     while (port,) in cursor.execute("SELECT port FROM inbounds").fetchall():
         port += 1
     settings = {
@@ -81,11 +79,9 @@ def add_ss_rule(ip, total_value, base_port):
     append_to_log(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为 {client_password}')
     return port
 
-# 添加新的sk规则
 def add_sk_rule(ip, total_value, base_port):
     user, passw = generate_user_pass()
     port = base_port
-    # 确保端口号未被使用，包括不同IP但相同端口的情况
     while (port,) in cursor.execute("SELECT port FROM inbounds").fetchall():
         port += 1
     settings = {
@@ -128,6 +124,52 @@ def get_local_ips():
     ip_output = subprocess.check_output(['hostname', '-I'], text=True).strip()
     return ip_output.split()
 
+def update_route_rules(inbound_tags):
+    try:
+        ip_output = subprocess.check_output(['hostname', '-I'], text=True).strip()
+        ips = ip_output.split()
+
+        cursor.execute("SELECT route FROM settings")
+        route_data = cursor.fetchone()
+        if route_data:
+            route_rules = json.loads(route_data[0])
+        else:
+            route_rules = []
+
+        for tag in inbound_tags:
+            found = False
+            for rule in route_rules:
+                if "inboundTag" in rule and tag in rule["inboundTag"]:
+                    found = True
+                    break
+            if not found:
+                for ip in ips:
+                    new_rule = {
+                        "type": "field",
+                        "network": "TCP,UDP",
+                        "inboundTag": [tag],
+                        "outboundTag": ip
+                    }
+                    route_rules.append(new_rule)
+
+        with open('change.json', 'w') as f:
+            json.dump(route_rules, f, indent=2, ensure_ascii=False)
+
+        with open('change.json', 'r') as f:
+            updated_rules = f.read()
+            cursor.execute("UPDATE settings SET route = ?", (updated_rules,))
+            conn.commit()
+
+        os.remove('change.json')
+
+        print("路由规则已更新。")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error getting hostname: {e}")
+    except Exception as e:
+        print(f"An error occurred: {e}")
+
+
 options = {
     '1': '批量添加新的规则（ss和sk）',
     '2': '批量添加新的ss规则',
@@ -136,22 +178,6 @@ options = {
     '0': '退出程序'
 }
 
-def main_menu():
-    while True:
-        print("请选择一个选项：")
-        for key, value in options.items():
-            print(f"{key}. {value}")
-        choice = input("请输入选项编号：")
-
-        if choice == '0':
-            print("退出程序...")
-            break
-        elif choice in options:
-            # ... 省略的代码 ...
-            pass
-        else:
-            print("无效的选项，请重新输入！")
-
 
 def main_menu():
     while True:
@@ -159,6 +185,7 @@ def main_menu():
         for key, value in options.items():
             print(f"{key}. {value}")
         choice = input("请输入选项编号：")
+
         if choice == '0':
             print("退出程序...")
             break
@@ -170,6 +197,8 @@ def main_menu():
                 continue
             total_value = int(match.group(1)) * 1073741824
 
+            inbound_tags = []
+
             if choice == '4':
                 ip = input("请输入要添加规则的IP地址：")
                 if not ip:
@@ -177,15 +206,16 @@ def main_menu():
                     print(f"可用的IP地址有：{', '.join(ips)}")
                     continue
                 else:
-                    # 如果是单个添加规则，则不需要检查IP是否被占用
                     ss_or_sk = input("请输入要添加的规则类型（ss或sk）：").lower()
                     if ss_or_sk == 'ss':
                         new_port_ss = add_ss_rule(ip, total_value, 20000)
+                        inbound_tags.append(f"inbound-ip:{ip}:{new_port_ss}")
                     elif ss_or_sk == 'sk':
                         new_port_sk = add_sk_rule(ip, total_value, 50000)
+                        inbound_tags.append(f"inbound-{ip}:{new_port_sk}")
                     added_count = 1
             else:
-                ips = get_local_ips()  
+                ips = get_local_ips()
                 added_count = 0
                 if choice == '1':
                     base_port_ss = 20000
@@ -196,21 +226,30 @@ def main_menu():
                         base_port_ss = new_port_ss + 1
                         base_port_sk = new_port_sk + 1
                         added_count += 2
+                        inbound_tags.append(f"inbound-ip:{ip}:{new_port_ss}")
+                        inbound_tags.append(f"inbound-{ip}:{new_port_sk}")
                 elif choice == '2':
                     base_port_ss = 20000
                     for ip in ips:
                         new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
                         base_port_ss = new_port_ss + 1
                         added_count += 1
+                        inbound_tags.append(f"inbound-ip:{ip}:{new_port_ss}")
                 elif choice == '3':
                     base_port_sk = 50000
                     for ip in ips:
                         new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
                         base_port_sk = new_port_sk + 1
                         added_count += 1
+                        inbound_tags.append(f"inbound-{ip}:{new_port_sk}")
 
             conn.commit()
             print(f'已成功将 {added_count} 条规则写入数据库。')
+
+            # 更新路由规则
+            if inbound_tags:
+                update_route_rules(inbound_tags)
+
         else:
             print("无效的选项，请重新输入！")
 
