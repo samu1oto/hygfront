@@ -41,8 +41,6 @@ with open('change.json', 'r') as f:
     config = json.load(f)
 rules = config["routing"]["rules"]
 
-new_ports = {}
-
 for inbound in inbounds:
     inbound_id, listen, port, protocol = inbound
     old_port = port
@@ -52,13 +50,13 @@ for inbound in inbounds:
         cursor.execute("UPDATE inbounds SET port=? WHERE id=?", (new_port, inbound_id))
         conn.commit()
         print(f"{ip} 端口 {port} 已经更改为{new_port}")
-        new_ports[(ip, old_port)] = new_port
 
-for (ip, old_port), new_port in new_ports.items():
-    for rule in rules:
-        for index, tag in enumerate(rule.get("inboundTag", [])):
-            if tag.startswith(f"inbound-ip:{ip}:{old_port}"):
-                rule["inboundTag"][index] = f"inbound-ip:{ip}:{new_port}"
+        # 更新route中的tag
+        for rule in rules:
+            for index, tag in enumerate(rule.get("inboundTag", [])):
+                if tag == f"inbound-ip:{ip}:{old_port}":
+                    rule["inboundTag"][index] = f"inbound-ip:{ip}:{new_port}"
+                    break
 
 with open('change.json', 'w') as f:
     json.dump(config, f, indent=4)

@@ -101,12 +101,21 @@ restore_conf() {
         read -n 1 -s -r
         x-ui stop
         cp /etc/x-ui/x-ui.bak /etc/x-ui/x-ui.db
+        
         admin_text="用户名和密码均为admin"
         result_file_path="results.log"
-        # 删除包含特定文本之后的所有内容
-        sed -i '/'"$admin_text"'/,$d' "$result_file_path"
+
+        line_number=$(awk '/'"$admin_text"'/{print NR}' "$result_file_path")
+
+        if [ ! -z "$line_number" ]; then
+            sed -i '${if ! /^[[:space:]]*$/!p;}' "$result_file_path"
+            sed -i "${line_number},\$d" "$result_file_path"
+            echo "配置恢复完成"
+        else
+            echo "恢复results.log遇到问题，不影响程序运作"
+        fi
+        
         x-ui start
-        echo "配置恢复完成"
         sleep 3
     else
         echo "x-ui.service未安装，请先安装"
