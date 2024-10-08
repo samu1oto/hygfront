@@ -7,7 +7,7 @@ import json
 import re
 
 def modify_port():
-    conn = sqlite3.connect('temp.db')
+    conn = sqlite3.connect('/etc/x-ui/x-ui.db')
     cursor = conn.cursor()
 
     ip_to_modify = input("请输入要修改的IP地址: ").strip()
