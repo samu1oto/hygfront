@@ -236,7 +236,7 @@ def main_menu():
                     conn.commit()
                     update_xray_template_config(inbound_tags_by_ip)
 
-                    print(f'已成功添加规则，并更新了 {ip} 的 xrayTemplateConfig。')
+                    print(f'已成功添加规则，并更新了 {ip} 的路由配置')
             else:
                 add_rules_and_update_config(total_value)
 
