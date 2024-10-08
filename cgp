@@ -33,7 +33,7 @@ if not config_row:
     conn.close()
     exit()
 
-# 将配置加载到字典中
+# 加载 xrayTemplateConfig
 config = json.loads(config_row[0])
 rules = config["routing"]["rules"]
 
@@ -76,7 +76,7 @@ for inbound in inbounds:
         cursor.execute("UPDATE inbounds SET settings=? WHERE id=?", (updated_settings_json, inbound_id))
         conn.commit()
 
-# 将修改后的配置写回数据库
+# 将修改后的 xrayTemplateConfig 写回数据库
 updated_config = json.dumps(config, indent=4)
 cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (updated_config,))
 conn.commit()
