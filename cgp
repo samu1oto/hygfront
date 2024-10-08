@@ -15,15 +15,16 @@ conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 def update_inbounds(ip):
-    cursor.execute("SELECT id, listen, port, protocol FROM inbounds WHERE listen=?", (ip,))
+    cursor.execute("SELECT id, listen, port FROM inbounds WHERE listen=?", (ip,))
     inbounds = cursor.fetchall()
 
     if not inbounds:
         print("未找到关于这个ip的配置")
-        return
+        return None
 
+    new_ports = {}  # 存储新的端口信息
     for inbound in inbounds:
-        inbound_id, listen, port, protocol = inbound
+        inbound_id, listen, port = inbound
         old_port = port
         new_port = input(f"请输入 {ip}:{port} 的新端口：（无需修改请直接回车） ").strip()
         if new_port:
@@ -31,8 +32,13 @@ def update_inbounds(ip):
             cursor.execute("UPDATE inbounds SET port=? WHERE id=?", (new_port, inbound_id))
             conn.commit()
             print(f"{ip} 端口 {port} 已经更改为 {new_port}")
+            new_ports[old_port] = new_port  # 保存新端口
+        else:
+            new_ports[old_port] = old_port  # 保存旧端口
 
-def update_xray_template_config(ip):
+    return new_ports
+
+def update_xray_template_config(ip, new_ports):
     cursor.execute("SELECT value FROM settings WHERE key='xrayTemplateConfig' AND id=42")
     config_row = cursor.fetchone()
     if not config_row:
@@ -47,17 +53,14 @@ def update_xray_template_config(ip):
         config = json.load(f)
     rules = config["routing"]["rules"]
 
-    # 更新route中的tag
-    for inbound in cursor.execute("SELECT id, port FROM inbounds WHERE listen=?", (ip,)):
-        inbound_id, old_port = inbound
-        new_port = input(f"请输入 {ip}:{old_port} 的新端口：（无需修改请直接回车） ").strip()
-        if new_port:
-            new_port = int(new_port)
-            for rule in rules:
-                for index, tag in enumerate(rule.get("inboundTag", [])):
-                    if tag == f"inbound-ip:{ip}:{old_port}":
-                        rule["inboundTag"][index] = f"inbound-ip:{ip}:{new_port}"
-                        break
+    # 更新 route 中的 tag
+    for old_port, new_port in new_ports.items():
+        for rule in rules:
+            for index, tag in enumerate(rule.get("inboundTag", [])):
+                if tag == f"inbound-ip:{ip}:{old_port}":
+                    print(f"正在将 {tag} 替换为 inbound-ip:{ip}:{new_port}")
+                    rule["inboundTag"][index] = f"inbound-ip:{ip}:{new_port}"
+                    break
 
     with open('change.json', 'w') as f:
         json.dump(config, f, indent=4)
@@ -69,8 +72,9 @@ def update_xray_template_config(ip):
     print("xrayTemplateConfig 修改成功.")
 
 ip = input("请输入要修改端口的IP地址（仅支持ipv4地址）： ")
-update_inbounds(ip)
-update_xray_template_config(ip)
+new_ports = update_inbounds(ip)
+if new_ports:
+    update_xray_template_config(ip, new_ports)
 
 conn.close()
 
