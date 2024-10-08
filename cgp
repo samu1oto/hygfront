@@ -47,24 +47,27 @@ def modify_port():
         with open('change.json', 'w') as change_file:
             change_file.write(xray_template_config_json)
 
-        with open('change.json', 'r') as change_file:
+        with open('change.json', 'r+') as change_file:
             xray_template_config = json.load(change_file)
 
-        # 修改 xrayTemplateConfig 中的 tag
-        updated = False
-        for inbound in xray_template_config.get('routing', {}).get('rules', []):
-            if inbound.get('tag') and f"{ip_to_modify}:{original_port}" in inbound.get('tag'):
-                inbound['tag'] = inbound['tag'].replace(f":{original_port}", f":{new_port}")
-                updated = True
+            # 修改 xrayTemplateConfig 中的 inboundTag
+            updated = False
+            for rule in xray_template_config.get('routing', {}).get('rules', []):
+                if 'inboundTag' in rule and isinstance(rule['inboundTag'], list):
+                    for i, tag in enumerate(rule['inboundTag']):
+                        if tag == f"inbound-ip:{ip_to_modify}:{original_port}" or tag == f"inbound-{ip_to_modify}:{original_port}":
+                            rule['inboundTag'][i] = tag.replace(f":{original_port}", f":{new_port}")
+                            updated = True
 
-        if updated:
-            with open('change.json', 'w') as change_file:
+            if updated:
+                change_file.seek(0)
                 json.dump(xray_template_config, change_file, indent=2, ensure_ascii=False)
+                change_file.truncate()
 
-            with open('change.json', 'r') as change_file:
-                json_content = change_file.read()
+                with open('change.json', 'r') as change_file:
+                    json_content = change_file.read()
 
-            cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (json_content,))
+                cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (json_content,))
 
     conn.commit()
     conn.close()
