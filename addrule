@@ -236,8 +236,8 @@ def main_menu():
                     for ip in ips:
                         new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
                         new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
-                        new_tags.append(f"inbound-ip:{ip}:{new_port_ss}")
-                        new_tags.append(f"inbound-{ip}:{new_port_sk}")
+                        new_tags[ip].append(f"inbound-ip:{ip}:{new_port_ss}")
+                        new_tags[ip].append(f"inbound-{ip}:{new_port_sk}")
                         base_port_ss = new_port_ss + 1
                         base_port_sk = new_port_sk + 1
                         added_count += 2
@@ -245,14 +245,14 @@ def main_menu():
                     base_port_ss = 20000
                     for ip in ips:
                         new_port_ss = add_ss_rule(ip, total_value, base_port_ss)
-                        new_tags.append(f"inbound-ip:{ip}:{new_port_ss}")
+                        new_tags[ip].append(f"inbound-ip:{ip}:{new_port_ss}")
                         base_port_ss = new_port_ss + 1
                         added_count += 1
                 elif choice == '3':
                     base_port_sk = 50000
                     for ip in ips:
                         new_port_sk = add_sk_rule(ip, total_value, base_port_sk)
-                        new_tags.append(f"inbound-{ip}:{new_port_sk}")
+                        new_tags[ip].append(f"inbound-{ip}:{new_port_sk}")
                         base_port_sk = new_port_sk + 1
                         added_count += 1
                 add_new_tags_to_route(new_tags)
