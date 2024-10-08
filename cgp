@@ -17,7 +17,7 @@ cursor = conn.cursor()
 ip = input("请输入要修改端口的IP地址（仅支持ipv4地址）： ")
 
 # 查找与该IP地址关联的inbounds配置
-cursor.execute("SELECT id, listen, port, protocol FROM inbounds WHERE listen=?", (ip,))
+cursor.execute("SELECT id, listen, port, protocol, settings, tag FROM inbounds WHERE listen=?", (ip,))
 inbounds = cursor.fetchall()
 
 if not inbounds:
@@ -44,7 +44,7 @@ rules = config["routing"]["rules"]
 
 # 遍历找到的inbounds，逐一修改端口并更新标签
 for inbound in inbounds:
-    inbound_id, listen, port, protocol = inbound
+    inbound_id, listen, port, protocol, settings_json, old_tag = inbound
     old_port = port
     new_port = input(f"请输入 {ip}:{port} 的新端口：（无需修改请直接回车） ").strip()
     
@@ -53,22 +53,32 @@ for inbound in inbounds:
         new_port = int(new_port)
         
         # 更新数据库中的端口信息
-        cursor.execute("UPDATE inbounds SET port=? WHERE id=?", (new_port, inbound_id))
+        cursor.execute("UPDATE inbounds SET port=?, tag=? WHERE id=?", (new_port, f"inbound-ip:{ip}:{new_port}", inbound_id))
         conn.commit()
         print(f"{ip} 端口 {port} 已经更改为 {new_port}")
 
         # 更新 xrayTemplateConfig 中的路由规则标签
         for rule in rules:
-            # 确保每个inboundTag都正确替换
             updated_tags = []
             for tag in rule.get("inboundTag", []):
-                # 如果匹配到旧的标签
                 if tag == f"inbound-ip:{ip}:{old_port}":
                     print(f"正在将 {tag} 替换为 inbound-ip:{ip}:{new_port}")
                     tag = f"inbound-ip:{ip}:{new_port}"
                 updated_tags.append(tag)
-            # 更新 inboundTag 列表
             rule["inboundTag"] = updated_tags
+
+        # 更新 inbounds 表中的 settings 字段的 tag
+        settings = json.loads(settings_json)
+        if "clients" in settings:
+            for client in settings["clients"]:
+                if client.get("tag") == f"inbound-ip:{ip}:{old_port}":
+                    print(f"正在将 settings 中的 tag {client['tag']} 更新为 inbound-ip:{ip}:{new_port}")
+                    client["tag"] = f"inbound-ip:{ip}:{new_port}"
+
+        # 将更新后的 settings 字段写回数据库
+        updated_settings_json = json.dumps(settings)
+        cursor.execute("UPDATE inbounds SET settings=? WHERE id=?", (updated_settings_json, inbound_id))
+        conn.commit()
 
 # 将修改后的配置写回临时文件
 with open('change.json', 'w') as f:

@@ -16,18 +16,22 @@ cursor = conn.cursor()
 cursor.execute("SELECT port, protocol FROM inbounds")
 occupied_ports = {(port, protocol) for port, protocol in cursor.fetchall()}
 
+#将新的配置写入配置信息，便于查找
 def append_to_log(message):
     with open('results.log', 'a') as log_file:
         log_file.write(message + '\n')
 
+#生成密码
 def generate_password():
     return os.urandom(16).hex()
 
+#生成密码
 def generate_user_pass():
     user = ''.join(random.choices(string.digits, k=10))
     passw = ''.join(random.choices(string.digits, k=10))
     return user, passw
 
+#定义生成ss的流程
 def add_ss_rule(ip, total_value, base_port):
     client_password = ''.join(random.choice(string.digits) for _ in range(6))
     port = base_port
@@ -79,6 +83,7 @@ def add_ss_rule(ip, total_value, base_port):
     append_to_log(f'{ip}:{port} ss配置的 客户邮箱为123456，密码为 {client_password}')
     return port
 
+#定义生成sk的流程
 def add_sk_rule(ip, total_value, base_port):
     user, passw = generate_user_pass()
     port = base_port
@@ -119,10 +124,12 @@ def add_sk_rule(ip, total_value, base_port):
     append_to_log(f'{ip}:{port} sk配置的用户名：{user}, 密码：{passw}')
     return port
 
+#遍历所有ip
 def get_local_ips():
     ip_output = subprocess.check_output(['hostname', '-I'], text=True).strip()
     return ip_output.split()
 
+#更新路由规则
 def update_xray_template_config(inbound_tags_by_ip):
     cursor.execute("SELECT value FROM settings WHERE key='xrayTemplateConfig'")
     xray_template_config = cursor.fetchone()[0]
@@ -158,6 +165,7 @@ def update_xray_template_config(inbound_tags_by_ip):
 
     os.remove('change.json')
 
+#批量写入逻辑
 def add_rules_and_update_config(total_value):
     inbound_tags_by_ip = {}
 
