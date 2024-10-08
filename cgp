@@ -7,6 +7,7 @@ import json
 import re
 
 def modify_port():
+    print("测试")
     conn = sqlite3.connect('/etc/x-ui/x-ui.db')
     cursor = conn.cursor()
 
