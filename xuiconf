@@ -666,8 +666,10 @@ conn.commit()
 conn.close()
 EOF
 
+echo "写入数据库..."
 python3 gendb.py
 rm -f temp.sql
+rm -f gendb.py
 
 echo 停止正在运行的xui进程
 x-ui stop
