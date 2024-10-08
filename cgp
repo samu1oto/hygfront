@@ -7,7 +7,6 @@ import json
 import re
 
 def modify_port():
-    print("测试")
     conn = sqlite3.connect('/etc/x-ui/x-ui.db')
     cursor = conn.cursor()
 
@@ -45,18 +44,27 @@ def modify_port():
 
     if settings_row:
         settings_id, xray_template_config_json = settings_row
-        xray_template_config = json.loads(xray_template_config_json)
+        with open('change.json', 'w') as change_file:
+            change_file.write(xray_template_config_json)
+
+        with open('change.json', 'r') as change_file:
+            xray_template_config = json.load(change_file)
 
         # 修改 xrayTemplateConfig 中的 tag
         updated = False
-        for inbound in xray_template_config.get('inbounds', []):
-            if inbound.get('listen') == ip_to_modify and inbound.get('port') == int(original_port):
-                inbound['port'] = int(new_port)
+        for inbound in xray_template_config.get('routing', {}).get('rules', []):
+            if inbound.get('tag') and f"{ip_to_modify}:{original_port}" in inbound.get('tag'):
                 inbound['tag'] = inbound['tag'].replace(f":{original_port}", f":{new_port}")
                 updated = True
 
         if updated:
-            cursor.execute("UPDATE settings SET value=? WHERE id=? AND key='xrayTemplateConfig'", (json.dumps(xray_template_config), settings_id))
+            with open('change.json', 'w') as change_file:
+                json.dump(xray_template_config, change_file, indent=2, ensure_ascii=False)
+
+            with open('change.json', 'r') as change_file:
+                json_content = change_file.read()
+
+            cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (json_content,))
 
     conn.commit()
     conn.close()
@@ -80,3 +88,5 @@ fi
 
 rm -f changeport.py
 x-ui start
+
+sleep 3
