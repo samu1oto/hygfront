@@ -104,9 +104,9 @@ restore_conf() {
         admin_text="用户名和密码均为admin"
         result_file_path="results.log"
         line_number=$(awk '/'"$admin_text"'/{print NR}' "$result_file_path")
-        if [ ! -z "$line_number" ]; then
-            sed -i "${line_number},\$d" "$result_file_path"
-            echo "从'$admin_text'开始的行已删除"
+        let "numberxx=line_number + 1"
+        if [ ! -z "$numberxx" ]; then
+            sed -i "${numberxx},\$d" "$result_file_path"
         else
             echo "未找到包含'$admin_text'的行"
         fi
