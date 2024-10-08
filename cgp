@@ -2,9 +2,6 @@
 
 rm -f changeport.py
 cat > changeport.py <<EOF
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-
 import json
 import sqlite3
 import os
@@ -19,6 +16,7 @@ cursor = conn.cursor()
 
 ip = input("请输入要修改端口的IP地址（仅支持ipv4地址）： ")
 
+# 查找与该IP地址关联的inbounds配置
 cursor.execute("SELECT id, listen, port, protocol FROM inbounds WHERE listen=?", (ip,))
 inbounds = cursor.fetchall()
 
@@ -27,6 +25,7 @@ if not inbounds:
     conn.close()
     exit()
 
+# 从settings表中获取xrayTemplateConfig配置
 cursor.execute("SELECT value FROM settings WHERE key='xrayTemplateConfig' AND id=42")
 config_row = cursor.fetchone()
 if not config_row:
@@ -34,40 +33,60 @@ if not config_row:
     conn.close()
     exit()
 
+# 将配置写入临时文件
 with open('change.json', 'w') as f:
     f.write(config_row[0])
 
+# 读取配置文件
 with open('change.json', 'r') as f:
     config = json.load(f)
 rules = config["routing"]["rules"]
 
+# 遍历找到的inbounds，逐一修改端口并更新标签
 for inbound in inbounds:
     inbound_id, listen, port, protocol = inbound
     old_port = port
     new_port = input(f"请输入 {ip}:{port} 的新端口：（无需修改请直接回车） ").strip()
+    
+    # 如果用户输入新端口，则进行修改
     if new_port:
         new_port = int(new_port)
+        
+        # 更新数据库中的端口信息
         cursor.execute("UPDATE inbounds SET port=? WHERE id=?", (new_port, inbound_id))
         conn.commit()
-        print(f"{ip} 端口 {port} 已经更改为{new_port}")
+        print(f"{ip} 端口 {port} 已经更改为 {new_port}")
 
-        # 更新route中的tag
+        # 更新 xrayTemplateConfig 中的路由规则标签
         for rule in rules:
-            for index, tag in enumerate(rule.get("inboundTag", [])):
+            # 确保每个inboundTag都正确替换
+            updated_tags = []
+            for tag in rule.get("inboundTag", []):
+                # 如果匹配到旧的标签
                 if tag == f"inbound-ip:{ip}:{old_port}":
-                    rule["inboundTag"][index] = f"inbound-ip:{ip}:{new_port}"
-                    break
+                    print(f"正在将 {tag} 替换为 inbound-ip:{ip}:{new_port}")
+                    tag = f"inbound-ip:{ip}:{new_port}"
+                updated_tags.append(tag)
+            # 更新 inboundTag 列表
+            rule["inboundTag"] = updated_tags
 
+# 将修改后的配置写回临时文件
 with open('change.json', 'w') as f:
     json.dump(config, f, indent=4)
 
-cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (open('change.json', 'r').read(),))
+# 将更新后的配置写回数据库
+with open('change.json', 'r') as f:
+    updated_config = f.read()
+
+cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (updated_config,))
 conn.commit()
 
+# 删除临时文件
 os.remove('change.json')
 
 print("新的修改已经应用到数据库")
 conn.close()
+
 EOF
 
 x-ui stop
