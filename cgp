@@ -33,25 +33,20 @@ if not config_row:
     conn.close()
     exit()
 
-# 将配置写入临时文件
-with open('change.json', 'w') as f:
-    f.write(config_row[0])
-
-# 读取配置文件
-with open('change.json', 'r') as f:
-    config = json.load(f)
-rules = config["routing"]["rules"]
+# 将配置写入临时文件并读取为 JSON
+config = json.loads(config_row[0])
+rules = config.get("routing", {}).get("rules", [])
 
 # 遍历找到的inbounds，逐一修改端口并更新标签
 for inbound in inbounds:
     inbound_id, listen, port, protocol, settings_json, old_tag = inbound
     old_port = port
     new_port = input(f"请输入 {ip}:{port} 的新端口：（无需修改请直接回车） ").strip()
-    
+
     # 如果用户输入新端口，则进行修改
     if new_port:
         new_port = int(new_port)
-        
+
         # 更新数据库中的端口信息
         cursor.execute("UPDATE inbounds SET port=?, tag=? WHERE id=?", (new_port, f"inbound-ip:{ip}:{new_port}", inbound_id))
         conn.commit()
@@ -81,19 +76,11 @@ for inbound in inbounds:
         cursor.execute("UPDATE inbounds SET settings=? WHERE id=?", (updated_settings_json, inbound_id))
         conn.commit()
 
-# 将修改后的配置写回临时文件
-with open('change.json', 'w') as f:
-    json.dump(config, f, indent=4)
-
-# 将更新后的配置写回数据库
-with open('change.json', 'r') as f:
-    updated_config = f.read()
+# 确保配置变化写回数据库
+updated_config = json.dumps(config, indent=4)
 
 cursor.execute("UPDATE settings SET value=? WHERE id=42 AND key='xrayTemplateConfig'", (updated_config,))
 conn.commit()
-
-# 删除临时文件
-os.remove('change.json')
 
 print("新的修改已经应用到数据库")
 conn.close()
