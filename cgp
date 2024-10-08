@@ -59,13 +59,14 @@ for inbound in inbounds:
 
         # 更新 xrayTemplateConfig 中的路由规则标签
         for rule in rules:
-            updated_tags = []
-            for tag in rule.get("inboundTag", []):
-                if tag == f"inbound-ip:{ip}:{old_port}":
-                    print(f"正在将 {tag} 替换为 inbound-ip:{ip}:{new_port}")
-                    tag = f"inbound-ip:{ip}:{new_port}"
-                updated_tags.append(tag)
-            rule["inboundTag"] = updated_tags
+            if "inboundTag" in rule:
+                updated_tags = []
+                for tag in rule["inboundTag"]:
+                    if tag == f"inbound-ip:{ip}:{old_port}":
+                        print(f"正在将 {tag} 替换为 inbound-ip:{ip}:{new_port}")
+                        tag = f"inbound-ip:{ip}:{new_port}"
+                    updated_tags.append(tag)
+                rule["inboundTag"] = updated_tags
 
         # 更新 inbounds 表中的 settings 字段的 tag
         settings = json.loads(settings_json)
