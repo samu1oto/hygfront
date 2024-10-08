@@ -6,9 +6,12 @@ rm -f genoutbound.py
 rm -f gensec.py
 rm -f temp.db
 rm -f writetemple.py
-rm -r route.json
-rm -r rules.json
-rm -r outbound.json
+rm -f route.json
+rm -f rules.json
+rm -f outbound.json
+rm -f temp.sql
+rm -f gendb.py
+rm -f temp.sql.hex
 sleep 1
 clear
 
@@ -464,22 +467,20 @@ EOF
 
 cat > gendb.py <<EOF
 import os
-import binascii
 import sqlite3
+import subprocess
 
 hex_file = 'temp.sql.hex'
 sql_file = 'temp.sql'
 db_file = 'temp.db'
 
-with open(hex_file, 'r') as f_hex:
-    hex_data = f_hex.read()
-
-binary_data = binascii.unhexlify(hex_data)
-
-with open(sql_file, 'wb') as f_sql:
-    f_sql.write(binary_data)
-
-print(f"已成功将 {hex_file} 转换为 {sql_file}")
+try:
+    # 执行 xxd -r -p temp.sql.hex > temp.sql 命令
+    subprocess.run(['xxd', '-r', '-p', hex_file, sql_file], check=True)
+    print(f"已成功转换数据库")
+except subprocess.CalledProcessError as e:
+    print(f"转换数据库时出错: {e}")
+    exit(1)
 
 with open(sql_file, 'r') as f:
     sql_script = f.read()
@@ -490,7 +491,7 @@ cursor = conn.cursor()
 try:
     cursor.executescript(sql_script)
     conn.commit()
-    print(f"已成功将 {sql_file} 转换为 {db_file}")
+    print(f"成功生成数据库")
 except sqlite3.Error as e:
     print(f"执行 SQL 脚本时出错: {e}")
 finally:
@@ -498,6 +499,7 @@ finally:
 
 os.remove(sql_file)
 os.remove(hex_file)
+
 EOF
 
 python3 gendb.py
@@ -535,15 +537,18 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 #clear
-echo "执行清理"
+echo "正在完成"
 rm -f genroute.py
 rm -f genoutbound.py
 rm -f gensec.py
 rm -f temp.db
 rm -f writetemple.py
-rm -r route.json
-rm -r rules.json
-rm -r outbound.json
+rm -f route.json
+rm -f rules.json
+rm -f outbound.json
+rm -f temp.sql
+rm -f gendb.py
+rm -f temp.sql.hex
 sleep 1
 clear
 cat results.log
