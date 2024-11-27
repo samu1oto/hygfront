@@ -102,7 +102,7 @@ import subprocess
 import json  
   
 try:  
-    ip_output = subprocess.check_output(['hostname', '-I'], text=True).strip()  
+    ip_output = subprocess.check_output(['hostname', '-I'], universal_newlines=True).strip()  
     ips = ip_output.split()  
 
     json_data = []  
